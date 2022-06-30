@@ -61,23 +61,13 @@ router.post("/", (req, res, next) => {
   }
 });
 
-const check = (req, res, next) => {
+const isSlugValid = (req, res, next) => {
   if (req.params.slug > 0 && req.params.slug <= data.length) next();
   else res.send("caught in middleware");
 };
 
-router.get("/:slug", check, (req, res, next) => {
-  //console.log(req.body.slug);
-  //console.log(data.length);
-  //console.log("d", data);
-  if (req.params.slug > 0 && req.params.slug <= data.length) {
-    //console.log(data[0]);
-
-    res.send(data[req.params.slug - 1]);
-    //console.log(data[req.slug -1])
-  } else {
-    res.send("Slug Not Found");
-  }
+router.get("/:slug", isSlugValid, (req, res, next) => {
+  res.send(data[req.params.slug - 1]);
 });
 
 router.put("/:slug", (req, res, next) => {
