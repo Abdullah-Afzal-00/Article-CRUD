@@ -1,0 +1,7 @@
+hello from node.js
+
+event loop 
+callback
+promise
+setTimeout
+asynchronous synchronous calls
