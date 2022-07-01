@@ -1,4 +1,5 @@
 const express = require("express");
+const fs = require("fs");
 const data = [
   {
     title: "The title",
@@ -39,9 +40,44 @@ const data = [
 
 const router = express.Router();
 
+const saveError = (e) => {
+  var dir = "./logs";
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir);
+  }
+  const nameOfFile = new Date();
+  console.log(nameOfFile);
+  const year = nameOfFile.getFullYear();
+  const month = ("0" + (nameOfFile.getMonth() + 1)).slice(-2);
+  const day = ("0" + nameOfFile.getDate()).slice(-2);
+  const hour = nameOfFile.getHours();
+  const minute = nameOfFile.getMinutes();
+  const seconds = nameOfFile.getSeconds();
+  console.log(`${day}/${month}/${year} ${hour}:${minute}:${seconds}.log`);
+  const name =
+    day +
+    "-" +
+    month +
+    "-" +
+    year +
+    "---" +
+    hour +
+    "-" +
+    minute +
+    "-" +
+    seconds +
+    ".log";
+  console.log("name ", name);
+  console.log("e", e);
+  fs.writeFile(`logs\\${name}`, `${e}`, (errr) => console.log(errr));
+  // fs.writeFile(`${}/${}/${}-${}:${}:${seconds}.log`, `${e}`, (errr) => console.log(errr));
+};
+
 router.post("/", (req, res, next) => {
   console.log("request", req.body);
   if (
+    req.body != {} &&
+    req.body.data != {} &&
     req.body.data.title != "" &&
     req.body.data.description != "" &&
     req.body.data.body != "" &&
@@ -54,20 +90,36 @@ router.post("/", (req, res, next) => {
     article.tags = req.body.data.tags;
     article.slug = data.length + 1;
     data.push(article);
-    res.send("Article Added");
+    res.status(200).send("Article Added");
     console.log(data);
   } else {
-    res.send("Data is incomplete");
+    saveError("Data is incomplete");
+    res.status(400).send("Data is incomplete");
   }
 });
 
 const isSlugValid = (req, res, next) => {
-  if (req.params.slug > 0 && req.params.slug <= data.length) next();
-  else res.send("caught in middleware");
+  if (req.slug > 0 && req.slug <= data.length) next();
+  else {
+    saveError("caught in middleware");
+    res.status(400).send("caught in middleware");
+  }
 };
 
-router.get("/:slug", isSlugValid, (req, res, next) => {
-  res.send(data[req.params.slug - 1]);
+const slugEmbed = (req, res, next) => {
+  console.log(typeof +req.params.slug);
+  let value = +req.params.slug;
+  if (req.params.slug === '""') {
+    saveError("Not a valid Slug");
+    res.status(400).send("Not a valid Slug");
+  } else {
+    req.slug = req.params.slug;
+    console.log(req.slug);
+    next();
+  }
+};
+router.get("/:slug", slugEmbed, isSlugValid, (req, res, next) => {
+  res.status(200).send(data[req.params.slug - 1]);
 });
 
 router.put("/:slug", (req, res, next) => {
@@ -90,26 +142,29 @@ router.put("/:slug", (req, res, next) => {
         data[req.params.slug - 1].body = req.body.body;
       }
       console.log(data[req.params.slug - 1]);
-      res.send("Updated");
+      res.status(200).send("Updated");
     } else {
-      res.send("The request body is empty");
+      saveError("The request body is empty");
+      res.status(400).send("The request body is empty");
     }
     //res.send(data[req.params.slug - 1]);
     //console.log(data[req.slug -1])
   } else {
-    res.send("Invalid Slug");
+    saveError("Invalid Slug");
+    res.status(400).send("Invalid Slug");
   }
 });
 router.delete("/:slug", (req, res, next) => {
   if (req.params.slug > 0 && req.params.slug <= data.length) {
     data[req.params.slug - 1] = {};
     data[req.params.slug - 1].slug = req.params.slug;
-    res.send("Deleted");
+    res.status(200).send("Deleted");
     console.log(data);
     //res.send(data[req.params.version - 1]);
     //console.log(data[req.slug -1])
   } else {
-    res.send("Invalid Slug");
+    saveError("Invalid Slug");
+    res.status(400).send("Invalid Slug");
   }
 });
 
